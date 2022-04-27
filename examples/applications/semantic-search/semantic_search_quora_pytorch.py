@@ -27,10 +27,11 @@ dataset_path = "quora_duplicate_questions.tsv"
 max_corpus_size = 100000
 
 
-embedding_cache_path = 'quora-embeddings-{}-size-{}.pkl'.format(model_name.replace('/', '_'), max_corpus_size)
+embedding_cache_path = 'quora-embeddings-{}-size-{}.pkl'.format(
+    model_name.replace('/', '_'), max_corpus_size)
 
 
-#Check if embedding cache path exists
+# Check if embedding cache path exists
 if not os.path.exists(embedding_cache_path):
     # Check if the dataset exists. If not, download and extract
     # Download dataset if needed
@@ -53,11 +54,13 @@ if not os.path.exists(embedding_cache_path):
 
     corpus_sentences = list(corpus_sentences)
     print("Encode the corpus. This might take a while")
-    corpus_embeddings = model.encode(corpus_sentences, show_progress_bar=True, convert_to_tensor=True)
+    corpus_embeddings = model.encode(
+        corpus_sentences, show_progress_bar=True, convert_to_tensor=True)
 
     print("Store file on disc")
     with open(embedding_cache_path, "wb") as fOut:
-        pickle.dump({'sentences': corpus_sentences, 'embeddings': corpus_embeddings}, fOut)
+        pickle.dump({'sentences': corpus_sentences,
+                    'embeddings': corpus_embeddings}, fOut)
 else:
     print("Load pre-computed embeddings from disc")
     with open(embedding_cache_path, "rb") as fIn:
@@ -68,7 +71,7 @@ else:
 ###############################
 print("Corpus loaded with {} sentences / embeddings".format(len(corpus_sentences)))
 
-#Move embeddings to the target device of the model
+# Move embeddings to the target device of the model
 corpus_embeddings = corpus_embeddings.to(model._target_device)
 
 while True:
@@ -78,11 +81,12 @@ while True:
     question_embedding = model.encode(inp_question, convert_to_tensor=True)
     hits = util.semantic_search(question_embedding, corpus_embeddings)
     end_time = time.time()
-    hits = hits[0]  #Get the hits for the first query
+    hits = hits[0]  # Get the hits for the first query
 
     print("Input question:", inp_question)
     print("Results (after {:.3f} seconds):".format(end_time-start_time))
     for hit in hits[0:5]:
-        print("\t{:.3f}\t{}".format(hit['score'], corpus_sentences[hit['corpus_id']]))
+        print("\t{:.3f}\t{}".format(
+            hit['score'], corpus_sentences[hit['corpus_id']]))
 
     print("\n\n========\n")

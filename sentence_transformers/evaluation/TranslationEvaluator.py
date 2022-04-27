@@ -11,12 +11,14 @@ import torch
 
 logger = logging.getLogger(__name__)
 
+
 class TranslationEvaluator(SentenceEvaluator):
     """
     Given two sets of sentences in different languages, e.g. (en_1, en_2, en_3...) and (fr_1, fr_2, fr_3, ...),
     and assuming that fr_i is the translation of en_i.
     Checks if vec(en_i) has the highest similarity to vec(fr_i). Computes the accurarcy in both directions
     """
+
     def __init__(self, source_sentences: List[str], target_sentences: List[str],  show_progress_bar: bool = False, batch_size: int = 16, name: str = '', print_wrong_matches: bool = False, write_csv: bool = True):
         """
         Constructs an evaluator based for the dataset
@@ -57,13 +59,16 @@ class TranslationEvaluator(SentenceEvaluator):
         else:
             out_txt = ":"
 
-        logger.info("Evaluating translation matching Accuracy on "+self.name+" dataset"+out_txt)
+        logger.info("Evaluating translation matching Accuracy on " +
+                    self.name+" dataset"+out_txt)
 
-        embeddings1 = torch.stack(model.encode(self.source_sentences, show_progress_bar=self.show_progress_bar, batch_size=self.batch_size, convert_to_numpy=False))
-        embeddings2 = torch.stack(model.encode(self.target_sentences, show_progress_bar=self.show_progress_bar, batch_size=self.batch_size, convert_to_numpy=False))
+        embeddings1 = torch.stack(model.encode(
+            self.source_sentences, show_progress_bar=self.show_progress_bar, batch_size=self.batch_size, convert_to_numpy=False))
+        embeddings2 = torch.stack(model.encode(
+            self.target_sentences, show_progress_bar=self.show_progress_bar, batch_size=self.batch_size, convert_to_numpy=False))
 
-
-        cos_sims = pytorch_cos_sim(embeddings1, embeddings2).detach().cpu().numpy()
+        cos_sims = pytorch_cos_sim(
+            embeddings1, embeddings2).detach().cpu().numpy()
 
         correct_src2trg = 0
         correct_trg2src = 0
@@ -74,17 +79,18 @@ class TranslationEvaluator(SentenceEvaluator):
             if i == max_idx:
                 correct_src2trg += 1
             elif self.print_wrong_matches:
-                print("i:", i, "j:", max_idx, "INCORRECT" if i != max_idx else "CORRECT")
+                print("i:", i, "j:", max_idx,
+                      "INCORRECT" if i != max_idx else "CORRECT")
                 print("Src:", self.source_sentences[i])
                 print("Trg:", self.target_sentences[max_idx])
-                print("Argmax score:", cos_sims[i][max_idx], "vs. correct score:", cos_sims[i][i])
+                print("Argmax score:",
+                      cos_sims[i][max_idx], "vs. correct score:", cos_sims[i][i])
 
                 results = zip(range(len(cos_sims[i])), cos_sims[i])
                 results = sorted(results, key=lambda x: x[1], reverse=True)
                 for idx, score in results[0:5]:
-                    print("\t", idx, "(Score: %.4f)" % (score), self.target_sentences[idx])
-
-
+                    print("\t", idx, "(Score: %.4f)" %
+                          (score), self.target_sentences[idx])
 
         cos_sims = cos_sims.T
         for i in range(len(cos_sims)):

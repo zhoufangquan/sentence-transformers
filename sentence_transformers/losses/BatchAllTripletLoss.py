@@ -32,6 +32,7 @@ class BatchAllTripletLoss(nn.Module):
         train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=train_batch_size)
         train_loss = losses.BatchAllTripletLoss(model=model)
     """
+
     def __init__(self, model: SentenceTransformer, distance_metric=BatchHardTripletLossDistanceFunction.eucledian_distance, margin: float = 5):
         super(BatchAllTripletLoss, self).__init__()
         self.sentence_embedder = model
@@ -39,10 +40,9 @@ class BatchAllTripletLoss(nn.Module):
         self.distance_metric = distance_metric
 
     def forward(self, sentence_features: Iterable[Dict[str, Tensor]], labels: Tensor):
-        rep = self.sentence_embedder(sentence_features[0])['sentence_embedding']
+        rep = self.sentence_embedder(sentence_features[0])[
+            'sentence_embedding']
         return self.batch_all_triplet_loss(labels, rep)
-
-
 
     def batch_all_triplet_loss(self, labels, embeddings):
         """Build the triplet loss over a batch of embeddings.
@@ -81,10 +81,10 @@ class BatchAllTripletLoss(nn.Module):
         num_positive_triplets = valid_triplets.size(0)
         num_valid_triplets = mask.sum()
 
-        fraction_positive_triplets = num_positive_triplets / (num_valid_triplets.float() + 1e-16)
+        fraction_positive_triplets = num_positive_triplets / \
+            (num_valid_triplets.float() + 1e-16)
 
         # Get final mean triplet loss over the positive valid triplets
         triplet_loss = triplet_loss.sum() / (num_positive_triplets + 1e-16)
 
         return triplet_loss
-

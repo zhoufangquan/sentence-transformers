@@ -9,6 +9,7 @@ import random
 
 logger = logging.getLogger(__name__)
 
+
 class ParallelSentencesDataset(Dataset):
     """
     This dataset reader can be used to read-in parallel sentences, i.e., it reads in a file with tab-seperated sentences with the same
@@ -71,8 +72,8 @@ class ParallelSentencesDataset(Dataset):
                 count += 1
                 if max_sentences is not None and max_sentences > 0 and count >= max_sentences:
                     break
-        self.add_dataset(parallel_sentences, weight=weight, max_sentences=max_sentences, max_sentence_length=max_sentence_length)
-
+        self.add_dataset(parallel_sentences, weight=weight,
+                         max_sentences=max_sentences, max_sentence_length=max_sentence_length)
 
     def add_dataset(self, parallel_sentences: List[List[str]], weight: int = 100, max_sentences: int = None, max_sentence_length: int = 128):
         sentences_map = {}
@@ -93,13 +94,13 @@ class ParallelSentencesDataset(Dataset):
         if len(sentences_map) == 0:
             return
 
-        self.num_sentences += sum([len(sentences_map[sent]) for sent in sentences_map])
+        self.num_sentences += sum([len(sentences_map[sent])
+                                  for sent in sentences_map])
 
         dataset_id = len(self.datasets)
         self.datasets.append(list(sentences_map.items()))
         self.datasets_iterator.append(0)
         self.dataset_indices.extend([dataset_id] * weight)
-
 
     def generate_data(self):
         source_sentences_list = []
@@ -109,12 +110,13 @@ class ParallelSentencesDataset(Dataset):
             source_sentences_list.append(src_sentence)
             target_sentences_list.append(trg_sentences)
 
-        #Generate embeddings
+        # Generate embeddings
         src_embeddings = self.get_embeddings(source_sentences_list)
 
         for src_embedding, trg_sentences in zip(src_embeddings, target_sentences_list):
             for trg_sentence in trg_sentences:
-                self.cache.append(InputExample(texts=[trg_sentence], label=src_embedding))
+                self.cache.append(InputExample(
+                    texts=[trg_sentence], label=src_embedding))
 
         random.shuffle(self.cache)
 
@@ -122,7 +124,8 @@ class ParallelSentencesDataset(Dataset):
         source, target_sentences = self.datasets[data_idx][self.datasets_iterator[data_idx]]
 
         self.datasets_iterator[data_idx] += 1
-        if self.datasets_iterator[data_idx] >= len(self.datasets[data_idx]): #Restart iterator
+        # Restart iterator
+        if self.datasets_iterator[data_idx] >= len(self.datasets[data_idx]):
             self.datasets_iterator[data_idx] = 0
             random.shuffle(self.datasets[data_idx])
 
@@ -132,14 +135,15 @@ class ParallelSentencesDataset(Dataset):
         if not self.use_embedding_cache:
             return self.teacher_model.encode(sentences, batch_size=self.batch_size, show_progress_bar=False, convert_to_numpy=True)
 
-        #Use caching
+        # Use caching
         new_sentences = []
         for sent in sentences:
             if sent not in self.embedding_cache:
                 new_sentences.append(sent)
 
         if len(new_sentences) > 0:
-            new_embeddings = self.teacher_model.encode(new_sentences, batch_size=self.batch_size, show_progress_bar=False, convert_to_numpy=True)
+            new_embeddings = self.teacher_model.encode(
+                new_sentences, batch_size=self.batch_size, show_progress_bar=False, convert_to_numpy=True)
             for sent, embedding in zip(new_sentences, new_embeddings):
                 self.embedding_cache[sent] = embedding
 

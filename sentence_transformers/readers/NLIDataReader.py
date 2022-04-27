@@ -8,6 +8,7 @@ class NLIDataReader(object):
     """
     Reads in the Stanford NLI dataset and the MultiGenre NLI dataset
     """
+
     def __init__(self, dataset_folder):
         self.dataset_folder = dataset_folder
 
@@ -29,7 +30,8 @@ class NLIDataReader(object):
         for sentence_a, sentence_b, label in zip(s1, s2, labels):
             guid = "%s-%d" % (filename, id)
             id += 1
-            examples.append(InputExample(guid=guid, texts=[sentence_a, sentence_b], label=self.map_label(label)))
+            examples.append(InputExample(guid=guid, texts=[
+                            sentence_a, sentence_b], label=self.map_label(label)))
 
             if 0 < max_examples <= len(examples):
                 break

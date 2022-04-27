@@ -10,6 +10,7 @@ import tqdm
 
 logger = logging.getLogger(__name__)
 
+
 class RerankingEvaluator(SentenceEvaluator):
     """
     This class evaluates a SentenceTransformer model for the task of re-ranking.
@@ -20,6 +21,7 @@ class RerankingEvaluator(SentenceEvaluator):
     :param samples: Must be a list and each element is of the form: {'query': '', 'positive': [], 'negative': []}. Query is the search query,
      positive is a list of positive (relevant) documents, negative is a list of negative (irrelevant) documents.
     """
+
     def __init__(self, samples, mrr_at_k: int = 10, name: str = '', write_csv: bool = True, similarity_fct=cos_sim, batch_size: int = 64, show_progress_bar: bool = False, use_batched_encoding: bool = True):
         self.samples = samples
         self.name = name
@@ -32,11 +34,12 @@ class RerankingEvaluator(SentenceEvaluator):
         if isinstance(self.samples, dict):
             self.samples = list(self.samples.values())
 
-        ### Remove sample with empty positive / negative set
-        self.samples = [sample for sample in self.samples if len(sample['positive']) > 0 and len(sample['negative']) > 0]
+        # Remove sample with empty positive / negative set
+        self.samples = [sample for sample in self.samples if len(
+            sample['positive']) > 0 and len(sample['negative']) > 0]
 
-
-        self.csv_file = "RerankingEvaluator" + ("_" + name if name else '') + "_results.csv"
+        self.csv_file = "RerankingEvaluator" + \
+            ("_" + name if name else '') + "_results.csv"
         self.csv_headers = ["epoch", "steps", "MAP", "MRR@{}".format(mrr_at_k)]
         self.write_csv = write_csv
 
@@ -49,24 +52,25 @@ class RerankingEvaluator(SentenceEvaluator):
         else:
             out_txt = ":"
 
-        logger.info("RerankingEvaluator: Evaluating the model on " + self.name + " dataset" + out_txt)
-
+        logger.info("RerankingEvaluator: Evaluating the model on " +
+                    self.name + " dataset" + out_txt)
 
         scores = self.compute_metrices(model)
         mean_ap = scores['map']
         mean_mrr = scores['mrr']
 
-        #### Some stats about the dataset
+        # Some stats about the dataset
         num_positives = [len(sample['positive']) for sample in self.samples]
         num_negatives = [len(sample['negative']) for sample in self.samples]
 
         logger.info("Queries: {} \t Positives: Min {:.1f}, Mean {:.1f}, Max {:.1f} \t Negatives: Min {:.1f}, Mean {:.1f}, Max {:.1f}".format(len(self.samples), np.min(num_positives), np.mean(num_positives),
-                                                                                                                                             np.max(num_positives), np.min(num_negatives),
+                                                                                                                                             np.max(num_positives), np.min(
+                                                                                                                                                 num_negatives),
                                                                                                                                              np.mean(num_negatives), np.max(num_negatives)))
         logger.info("MAP: {:.2f}".format(mean_ap * 100))
         logger.info("MRR@{}: {:.2f}".format(self.mrr_at_k, mean_mrr * 100))
 
-        #### Write results to disc
+        # Write results to disc
         if output_path is not None and self.write_csv:
             csv_path = os.path.join(output_path, self.csv_file)
             output_file_exists = os.path.isfile(csv_path)
@@ -91,9 +95,9 @@ class RerankingEvaluator(SentenceEvaluator):
         all_ap_scores = []
 
         all_query_embs = model.encode([sample['query'] for sample in self.samples],
-                                  convert_to_tensor=True,
-                                  batch_size=self.batch_size,
-                                  show_progress_bar=True) #self.show_progress_bar)
+                                      convert_to_tensor=True,
+                                      batch_size=self.batch_size,
+                                      show_progress_bar=True)  # self.show_progress_bar)
 
         all_docs = []
 
@@ -102,12 +106,12 @@ class RerankingEvaluator(SentenceEvaluator):
             all_docs.extend(sample['negative'])
 
         all_docs_embs = model.encode(all_docs,
-                                    convert_to_tensor=True,
-                                    batch_size=self.batch_size,
-                                    show_progress_bar=self.show_progress_bar)
+                                     convert_to_tensor=True,
+                                     batch_size=self.batch_size,
+                                     show_progress_bar=self.show_progress_bar)
 
-        #Compute scores
-        query_idx, docs_idx = 0,0
+        # Compute scores
+        query_idx, docs_idx = 0, 0
         for instance in self.samples:
             query_emb = all_query_embs[query_idx]
             query_idx += 1
@@ -124,9 +128,10 @@ class RerankingEvaluator(SentenceEvaluator):
             if len(pred_scores.shape) > 1:
                 pred_scores = pred_scores[0]
 
-            pred_scores_argsort = torch.argsort(-pred_scores)  #Sort in decreasing order
+            # Sort in decreasing order
+            pred_scores_argsort = torch.argsort(-pred_scores)
 
-            #Compute MRR score
+            # Compute MRR score
             is_relevant = [True]*num_pos + [False]*num_neg
             mrr_score = 0
             for rank, index in enumerate(pred_scores_argsort[0:self.mrr_at_k]):
@@ -136,13 +141,13 @@ class RerankingEvaluator(SentenceEvaluator):
             all_mrr_scores.append(mrr_score)
 
             # Compute AP
-            all_ap_scores.append(average_precision_score(is_relevant, pred_scores.cpu().tolist()))
+            all_ap_scores.append(average_precision_score(
+                is_relevant, pred_scores.cpu().tolist()))
 
         mean_ap = np.mean(all_ap_scores)
         mean_mrr = np.mean(all_mrr_scores)
 
         return {'map': mean_ap, 'mrr': mean_mrr}
-
 
     def compute_metrices_individual(self, model):
         """
@@ -153,7 +158,6 @@ class RerankingEvaluator(SentenceEvaluator):
         """
         all_mrr_scores = []
         all_ap_scores = []
-
 
         for instance in tqdm.tqdm(self.samples, disable=not self.show_progress_bar, desc="Samples"):
             query = instance['query']
@@ -166,16 +170,19 @@ class RerankingEvaluator(SentenceEvaluator):
             docs = positive + negative
             is_relevant = [True]*len(positive) + [False]*len(negative)
 
-            query_emb = model.encode([query], convert_to_tensor=True, batch_size=self.batch_size, show_progress_bar=False)
-            docs_emb = model.encode(docs, convert_to_tensor=True, batch_size=self.batch_size, show_progress_bar=False)
+            query_emb = model.encode(
+                [query], convert_to_tensor=True, batch_size=self.batch_size, show_progress_bar=False)
+            docs_emb = model.encode(
+                docs, convert_to_tensor=True, batch_size=self.batch_size, show_progress_bar=False)
 
             pred_scores = self.similarity_fct(query_emb, docs_emb)
             if len(pred_scores.shape) > 1:
                 pred_scores = pred_scores[0]
 
-            pred_scores_argsort = torch.argsort(-pred_scores)  #Sort in decreasing order
+            # Sort in decreasing order
+            pred_scores_argsort = torch.argsort(-pred_scores)
 
-            #Compute MRR score
+            # Compute MRR score
             mrr_score = 0
             for rank, index in enumerate(pred_scores_argsort[0:self.mrr_at_k]):
                 if is_relevant[index]:
@@ -184,10 +191,10 @@ class RerankingEvaluator(SentenceEvaluator):
             all_mrr_scores.append(mrr_score)
 
             # Compute AP
-            all_ap_scores.append(average_precision_score(is_relevant, pred_scores.cpu().tolist()))
+            all_ap_scores.append(average_precision_score(
+                is_relevant, pred_scores.cpu().tolist()))
 
         mean_ap = np.mean(all_ap_scores)
         mean_mrr = np.mean(all_mrr_scores)
 
         return {'map': mean_ap, 'mrr': mean_mrr}
-

@@ -5,6 +5,7 @@ import csv
 
 logger = logging.getLogger(__name__)
 
+
 class CERerankingEvaluator:
     """
     This class evaluates a CrossEncoder model for the task of re-ranking.
@@ -15,6 +16,7 @@ class CERerankingEvaluator:
     :param samples: Must be a list and each element is of the form: {'query': '', 'positive': [], 'negative': []}. Query is the search query,
      positive is a list of positive (relevant) documents, negative is a list of negative (irrelevant) documents.
     """
+
     def __init__(self, samples, mrr_at_k: int = 10, name: str = '', write_csv: bool = True):
         self.samples = samples
         self.name = name
@@ -23,7 +25,8 @@ class CERerankingEvaluator:
         if isinstance(self.samples, dict):
             self.samples = list(self.samples.values())
 
-        self.csv_file = "CERerankingEvaluator" + ("_" + name if name else '') + "_results.csv"
+        self.csv_file = "CERerankingEvaluator" + \
+            ("_" + name if name else '') + "_results.csv"
         self.csv_headers = ["epoch", "steps", "MRR@{}".format(mrr_at_k)]
         self.write_csv = write_csv
 
@@ -36,7 +39,8 @@ class CERerankingEvaluator:
         else:
             out_txt = ":"
 
-        logger.info("CERerankingEvaluator: Evaluating the model on " + self.name + " dataset" + out_txt)
+        logger.info("CERerankingEvaluator: Evaluating the model on " +
+                    self.name + " dataset" + out_txt)
 
         all_mrr_scores = []
         num_queries = 0
@@ -57,8 +61,10 @@ class CERerankingEvaluator:
             num_negatives.append(len(negative))
 
             model_input = [[query, doc] for doc in docs]
-            pred_scores = model.predict(model_input, convert_to_numpy=True, show_progress_bar=False)
-            pred_scores_argsort = np.argsort(-pred_scores)  #Sort in decreasing order
+            pred_scores = model.predict(
+                model_input, convert_to_numpy=True, show_progress_bar=False)
+            # Sort in decreasing order
+            pred_scores_argsort = np.argsort(-pred_scores)
 
             mrr_score = 0
             for rank, index in enumerate(pred_scores_argsort[0:self.mrr_at_k]):
@@ -69,7 +75,8 @@ class CERerankingEvaluator:
             all_mrr_scores.append(mrr_score)
 
         mean_mrr = np.mean(all_mrr_scores)
-        logger.info("Queries: {} \t Positives: Min {:.1f}, Mean {:.1f}, Max {:.1f} \t Negatives: Min {:.1f}, Mean {:.1f}, Max {:.1f}".format(num_queries, np.min(num_positives), np.mean(num_positives), np.max(num_positives), np.min(num_negatives), np.mean(num_negatives), np.max(num_negatives)))
+        logger.info("Queries: {} \t Positives: Min {:.1f}, Mean {:.1f}, Max {:.1f} \t Negatives: Min {:.1f}, Mean {:.1f}, Max {:.1f}".format(
+            num_queries, np.min(num_positives), np.mean(num_positives), np.max(num_positives), np.min(num_negatives), np.mean(num_negatives), np.max(num_negatives)))
         logger.info("MRR@{}: {:.2f}".format(self.mrr_at_k, mean_mrr*100))
 
         if output_path is not None and self.write_csv:

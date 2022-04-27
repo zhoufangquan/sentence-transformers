@@ -9,8 +9,8 @@ import numpy as np
 from typing import List, Tuple, Dict, Set, Callable
 
 
-
 logger = logging.getLogger(__name__)
+
 
 class InformationRetrievalEvaluator(SentenceEvaluator):
     """
@@ -21,9 +21,9 @@ class InformationRetrievalEvaluator(SentenceEvaluator):
     """
 
     def __init__(self,
-                 queries: Dict[str, str],  #qid => query
-                 corpus: Dict[str, str],  #cid => doc
-                 relevant_docs: Dict[str, Set[str]],  #qid => Set[cid]
+                 queries: Dict[str, str],  # qid => query
+                 corpus: Dict[str, str],  # cid => doc
+                 relevant_docs: Dict[str, Set[str]],  # qid => Set[cid]
                  corpus_chunk_size: int = 50000,
                  mrr_at_k: List[int] = [10],
                  ndcg_at_k: List[int] = [10],
@@ -34,7 +34,8 @@ class InformationRetrievalEvaluator(SentenceEvaluator):
                  batch_size: int = 32,
                  name: str = '',
                  write_csv: bool = True,
-                 score_functions: List[Callable[[Tensor, Tensor], Tensor] ] = {'cos_sim': cos_sim, 'dot_score': dot_score},       #Score function, higher=more similar
+                 # Score function, higher=more similar
+                 score_functions: List[Callable[[Tensor, Tensor], Tensor]] = {'cos_sim': cos_sim, 'dot_score': dot_score},
                  main_score_function: str = None
                  ):
 
@@ -75,7 +76,8 @@ class InformationRetrievalEvaluator(SentenceEvaluator):
                 self.csv_headers.append("{}-Accuracy@{}".format(score_name, k))
 
             for k in precision_recall_at_k:
-                self.csv_headers.append("{}-Precision@{}".format(score_name, k))
+                self.csv_headers.append(
+                    "{}-Precision@{}".format(score_name, k))
                 self.csv_headers.append("{}-Recall@{}".format(score_name, k))
 
             for k in mrr_at_k:
@@ -89,11 +91,13 @@ class InformationRetrievalEvaluator(SentenceEvaluator):
 
     def __call__(self, model, output_path: str = None, epoch: int = -1, steps: int = -1, *args, **kwargs) -> float:
         if epoch != -1:
-            out_txt = " after epoch {}:".format(epoch) if steps == -1 else " in epoch {} after {} steps:".format(epoch, steps)
+            out_txt = " after epoch {}:".format(
+                epoch) if steps == -1 else " in epoch {} after {} steps:".format(epoch, steps)
         else:
             out_txt = ":"
 
-        logger.info("Information Retrieval Evaluation on " + self.name + " dataset" + out_txt)
+        logger.info("Information Retrieval Evaluation on " +
+                    self.name + " dataset" + out_txt)
 
         scores = self.compute_metrices(model, *args, **kwargs)
 
@@ -135,56 +139,64 @@ class InformationRetrievalEvaluator(SentenceEvaluator):
         else:
             return scores[self.main_score_function]['map@k'][max(self.map_at_k)]
 
-    def compute_metrices(self, model, corpus_model = None, corpus_embeddings: Tensor = None) -> Dict[str, float]:
+    def compute_metrices(self, model, corpus_model=None, corpus_embeddings: Tensor = None) -> Dict[str, float]:
         if corpus_model is None:
             corpus_model = model
 
-        max_k = max(max(self.mrr_at_k), max(self.ndcg_at_k), max(self.accuracy_at_k), max(self.precision_recall_at_k), max(self.map_at_k))
+        max_k = max(max(self.mrr_at_k), max(self.ndcg_at_k), max(
+            self.accuracy_at_k), max(self.precision_recall_at_k), max(self.map_at_k))
 
         # Compute embedding for the queries
-        query_embeddings = model.encode(self.queries, show_progress_bar=self.show_progress_bar, batch_size=self.batch_size, convert_to_tensor=True)
+        query_embeddings = model.encode(
+            self.queries, show_progress_bar=self.show_progress_bar, batch_size=self.batch_size, convert_to_tensor=True)
 
         queries_result_list = {}
         for name in self.score_functions:
-            queries_result_list[name] = [[] for _ in range(len(query_embeddings))]
+            queries_result_list[name] = [[]
+                                         for _ in range(len(query_embeddings))]
 
-        #Iterate over chunks of the corpus
+        # Iterate over chunks of the corpus
         for corpus_start_idx in trange(0, len(self.corpus), self.corpus_chunk_size, desc='Corpus Chunks', disable=not self.show_progress_bar):
-            corpus_end_idx = min(corpus_start_idx + self.corpus_chunk_size, len(self.corpus))
+            corpus_end_idx = min(corpus_start_idx +
+                                 self.corpus_chunk_size, len(self.corpus))
 
-            #Encode chunk of corpus
+            # Encode chunk of corpus
             if corpus_embeddings is None:
-                sub_corpus_embeddings = corpus_model.encode(self.corpus[corpus_start_idx:corpus_end_idx], show_progress_bar=False, batch_size=self.batch_size, convert_to_tensor=True)
+                sub_corpus_embeddings = corpus_model.encode(
+                    self.corpus[corpus_start_idx:corpus_end_idx], show_progress_bar=False, batch_size=self.batch_size, convert_to_tensor=True)
             else:
                 sub_corpus_embeddings = corpus_embeddings[corpus_start_idx:corpus_end_idx]
 
-            #Compute cosine similarites
+            # Compute cosine similarites
             for name, score_function in self.score_functions.items():
-                pair_scores = score_function(query_embeddings, sub_corpus_embeddings)
+                pair_scores = score_function(
+                    query_embeddings, sub_corpus_embeddings)
 
-                #Get top-k values
-                pair_scores_top_k_values, pair_scores_top_k_idx = torch.topk(pair_scores, min(max_k, len(pair_scores[0])), dim=1, largest=True, sorted=False)
+                # Get top-k values
+                pair_scores_top_k_values, pair_scores_top_k_idx = torch.topk(
+                    pair_scores, min(max_k, len(pair_scores[0])), dim=1, largest=True, sorted=False)
                 pair_scores_top_k_values = pair_scores_top_k_values.cpu().tolist()
                 pair_scores_top_k_idx = pair_scores_top_k_idx.cpu().tolist()
 
                 for query_itr in range(len(query_embeddings)):
                     for sub_corpus_id, score in zip(pair_scores_top_k_idx[query_itr], pair_scores_top_k_values[query_itr]):
                         corpus_id = self.corpus_ids[corpus_start_idx+sub_corpus_id]
-                        queries_result_list[name][query_itr].append({'corpus_id': corpus_id, 'score': score})
+                        queries_result_list[name][query_itr].append(
+                            {'corpus_id': corpus_id, 'score': score})
 
         logger.info("Queries: {}".format(len(self.queries)))
         logger.info("Corpus: {}\n".format(len(self.corpus)))
 
-        #Compute scores
-        scores = {name: self.compute_metrics(queries_result_list[name]) for name in self.score_functions}
+        # Compute scores
+        scores = {name: self.compute_metrics(
+            queries_result_list[name]) for name in self.score_functions}
 
-        #Output
+        # Output
         for name in self.score_function_names:
             logger.info("Score-Function: {}".format(name))
             self.output_scores(scores[name])
 
         return scores
-
 
     def compute_metrics(self, queries_result_list: List[object]):
         # Init score computation values
@@ -200,7 +212,8 @@ class InformationRetrievalEvaluator(SentenceEvaluator):
             query_id = self.queries_ids[query_itr]
 
             # Sort scores
-            top_hits = sorted(queries_result_list[query_itr], key=lambda x: x['score'], reverse=True)
+            top_hits = sorted(
+                queries_result_list[query_itr], key=lambda x: x['score'], reverse=True)
             query_relevant_docs = self.relevant_docs[query_id]
 
             # Accuracy@k - We count the result correct, if at least one relevant doc is accross the top-k documents
@@ -218,7 +231,8 @@ class InformationRetrievalEvaluator(SentenceEvaluator):
                         num_correct += 1
 
                 precisions_at_k[k_val].append(num_correct / k_val)
-                recall_at_k[k_val].append(num_correct / len(query_relevant_docs))
+                recall_at_k[k_val].append(
+                    num_correct / len(query_relevant_docs))
 
             # MRR@k
             for k_val in self.mrr_at_k:
@@ -229,10 +243,12 @@ class InformationRetrievalEvaluator(SentenceEvaluator):
 
             # NDCG@k
             for k_val in self.ndcg_at_k:
-                predicted_relevance = [1 if top_hit['corpus_id'] in query_relevant_docs else 0 for top_hit in top_hits[0:k_val]]
+                predicted_relevance = [
+                    1 if top_hit['corpus_id'] in query_relevant_docs else 0 for top_hit in top_hits[0:k_val]]
                 true_relevances = [1] * len(query_relevant_docs)
 
-                ndcg_value = self.compute_dcg_at_k(predicted_relevance, k_val) / self.compute_dcg_at_k(true_relevances, k_val)
+                ndcg_value = self.compute_dcg_at_k(
+                    predicted_relevance, k_val) / self.compute_dcg_at_k(true_relevances, k_val)
                 ndcg[k_val].append(ndcg_value)
 
             # MAP@k
@@ -245,7 +261,8 @@ class InformationRetrievalEvaluator(SentenceEvaluator):
                         num_correct += 1
                         sum_precisions += num_correct / (rank + 1)
 
-                avg_precision = sum_precisions / min(k_val, len(query_relevant_docs))
+                avg_precision = sum_precisions / \
+                    min(k_val, len(query_relevant_docs))
                 AveP_at_k[k_val].append(avg_precision)
 
         # Compute averages
@@ -267,19 +284,20 @@ class InformationRetrievalEvaluator(SentenceEvaluator):
         for k in AveP_at_k:
             AveP_at_k[k] = np.mean(AveP_at_k[k])
 
-
         return {'accuracy@k': num_hits_at_k, 'precision@k': precisions_at_k, 'recall@k': recall_at_k, 'ndcg@k': ndcg, 'mrr@k': MRR, 'map@k': AveP_at_k}
-
 
     def output_scores(self, scores):
         for k in scores['accuracy@k']:
-            logger.info("Accuracy@{}: {:.2f}%".format(k, scores['accuracy@k'][k]*100))
+            logger.info("Accuracy@{}: {:.2f}%".format(k,
+                        scores['accuracy@k'][k]*100))
 
         for k in scores['precision@k']:
-            logger.info("Precision@{}: {:.2f}%".format(k, scores['precision@k'][k]*100))
+            logger.info("Precision@{}: {:.2f}%".format(k,
+                        scores['precision@k'][k]*100))
 
         for k in scores['recall@k']:
-            logger.info("Recall@{}: {:.2f}%".format(k, scores['recall@k'][k]*100))
+            logger.info("Recall@{}: {:.2f}%".format(k,
+                        scores['recall@k'][k]*100))
 
         for k in scores['mrr@k']:
             logger.info("MRR@{}: {:.4f}".format(k, scores['mrr@k'][k]))
@@ -290,25 +308,10 @@ class InformationRetrievalEvaluator(SentenceEvaluator):
         for k in scores['map@k']:
             logger.info("MAP@{}: {:.4f}".format(k, scores['map@k'][k]))
 
-
     @staticmethod
     def compute_dcg_at_k(relevances, k):
         dcg = 0
         for i in range(min(len(relevances), k)):
-            dcg += relevances[i] / np.log2(i + 2)  #+2 as we start our idx at 0
+            # +2 as we start our idx at 0
+            dcg += relevances[i] / np.log2(i + 2)
         return dcg
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

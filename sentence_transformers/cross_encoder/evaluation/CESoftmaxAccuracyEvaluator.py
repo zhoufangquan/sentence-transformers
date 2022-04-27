@@ -8,6 +8,7 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
+
 class CESoftmaxAccuracyEvaluator:
     """
     This evaluator can be used with the CrossEncoder class.
@@ -15,12 +16,14 @@ class CESoftmaxAccuracyEvaluator:
     It is designed for CrossEncoders with 2 or more outputs. It measure the
     accuracy of the predict class vs. the gold labels.
     """
-    def __init__(self, sentence_pairs: List[List[str]], labels: List[int], name: str='', write_csv: bool = True):
+
+    def __init__(self, sentence_pairs: List[List[str]], labels: List[int], name: str = '', write_csv: bool = True):
         self.sentence_pairs = sentence_pairs
         self.labels = labels
         self.name = name
 
-        self.csv_file = "CESoftmaxAccuracyEvaluator" + ("_" + name if name else '') + "_results.csv"
+        self.csv_file = "CESoftmaxAccuracyEvaluator" + \
+            ("_" + name if name else '') + "_results.csv"
         self.csv_headers = ["epoch", "steps", "Accuracy"]
         self.write_csv = write_csv
 
@@ -43,8 +46,10 @@ class CESoftmaxAccuracyEvaluator:
         else:
             out_txt = ":"
 
-        logger.info("CESoftmaxAccuracyEvaluator: Evaluating the model on " + self.name + " dataset" + out_txt)
-        pred_scores = model.predict(self.sentence_pairs, convert_to_numpy=True, show_progress_bar=False)
+        logger.info("CESoftmaxAccuracyEvaluator: Evaluating the model on " +
+                    self.name + " dataset" + out_txt)
+        pred_scores = model.predict(
+            self.sentence_pairs, convert_to_numpy=True, show_progress_bar=False)
         pred_labels = np.argmax(pred_scores, axis=1)
 
         assert len(pred_labels) == len(self.labels)

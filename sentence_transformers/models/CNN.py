@@ -16,7 +16,8 @@ class CNN(nn.Module):
 
     def __init__(self, in_word_embedding_dimension: int, out_channels: int = 256, kernel_sizes: List[int] = [1, 3, 5], stride_sizes: List[int] = None):
         nn.Module.__init__(self)
-        self.config_keys = ['in_word_embedding_dimension', 'out_channels', 'kernel_sizes']
+        self.config_keys = ['in_word_embedding_dimension',
+                            'out_channels', 'kernel_sizes']
         self.in_word_embedding_dimension = in_word_embedding_dimension
         self.out_channels = out_channels
         self.kernel_sizes = kernel_sizes
@@ -56,7 +57,8 @@ class CNN(nn.Module):
         with open(os.path.join(output_path, 'cnn_config.json'), 'w') as fOut:
             json.dump(self.get_config_dict(), fOut, indent=2)
 
-        torch.save(self.state_dict(), os.path.join(output_path, 'pytorch_model.bin'))
+        torch.save(self.state_dict(), os.path.join(
+            output_path, 'pytorch_model.bin'))
 
     def get_config_dict(self):
         return {key: self.__dict__[key] for key in self.config_keys}
@@ -66,8 +68,8 @@ class CNN(nn.Module):
         with open(os.path.join(input_path, 'cnn_config.json'), 'r') as fIn:
             config = json.load(fIn)
 
-        weights = torch.load(os.path.join(input_path, 'pytorch_model.bin'), map_location=torch.device('cpu'))
+        weights = torch.load(os.path.join(
+            input_path, 'pytorch_model.bin'), map_location=torch.device('cpu'))
         model = CNN(**config)
         model.load_state_dict(weights)
         return model
-

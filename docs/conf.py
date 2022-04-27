@@ -75,17 +75,16 @@ html_js_files = [
 
 html_show_sourcelink = False
 html_context = {
-  'display_github': True,
-  'github_user': 'UKPLab',
-  'github_repo': 'sentence-transformers',
-  'github_version': 'master/',
+    'display_github': True,
+    'github_user': 'UKPLab',
+    'github_repo': 'sentence-transformers',
+    'github_version': 'master/',
 }
 
 html_logo = 'img/logo.png'
 html_favicon = 'img/favicon.ico'
 
 autoclass_content = 'both'
-
 
 
 class GithubURLDomain(Domain):
@@ -104,11 +103,10 @@ class GithubURLDomain(Domain):
         return []
 
 
-
 def setup(app):
     app.add_domain(GithubURLDomain)
     app.add_config_value('recommonmark_config', {
-            #'url_resolver': lambda url: github_doc_root + url,
-            'auto_toc_tree_section': 'Contents',
-            }, True)
+        # 'url_resolver': lambda url: github_doc_root + url,
+        'auto_toc_tree_section': 'Contents',
+    }, True)
     app.add_transform(AutoStructify)

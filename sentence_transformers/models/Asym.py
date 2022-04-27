@@ -7,6 +7,7 @@ from ..util import import_from_string
 from collections import OrderedDict
 from typing import List, Dict, Optional, Union, Tuple
 
+
 class Asym(nn.Sequential):
     def __init__(self, sub_modules: Dict[str, List[nn.Module]], allow_empty_key: bool = True):
         """
@@ -45,14 +46,14 @@ class Asym(nn.Sequential):
                 ordered_dict[name+"-"+str(idx)] = model
         super(Asym, self).__init__(ordered_dict)
 
-
     def forward(self, features: Dict[str, Tensor]):
         if 'text_keys' in features and len(features['text_keys']) > 0:
             text_key = features['text_keys'][0]
             for model in self.sub_modules[text_key]:
                 features = model(features)
         elif not self.allow_empty_key:
-            raise ValueError('Input did not specify any keys and allow_empty_key is False')
+            raise ValueError(
+                'Input did not specify any keys and allow_empty_key is False')
 
         return features
 
@@ -87,8 +88,8 @@ class Asym(nn.Sequential):
         Tokenizes a text and maps tokens to token-ids
         """
         if not isinstance(texts[0], dict):
-            raise AttributeError("Asym. model requires that texts are passed as dicts: {'key': 'text'}")
-
+            raise AttributeError(
+                "Asym. model requires that texts are passed as dicts: {'key': 'text'}")
 
         module_key = None
 
@@ -97,9 +98,8 @@ class Asym(nn.Sequential):
             if module_key is None:
                 module_key = text_key
 
-            assert text_key == module_key   #Mixed batches are not allowed
+            assert text_key == module_key  # Mixed batches are not allowed
         return self.sub_modules[module_key][0].tokenize(texts)
-
 
     @staticmethod
     def load(input_path):

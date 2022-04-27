@@ -4,6 +4,7 @@ from typing import Iterable, Dict
 from ..SentenceTransformer import SentenceTransformer
 from .. import util
 
+
 class MultipleNegativesRankingLoss(nn.Module):
     """
         This loss expects as input a batch consisting of sentence pairs (a_1, p_1), (a_2, p_2)..., (a_n, p_n)
@@ -36,7 +37,8 @@ class MultipleNegativesRankingLoss(nn.Module):
             train_dataloader = DataLoader(train_examples, shuffle=True, batch_size=32)
             train_loss = losses.MultipleNegativesRankingLoss(model=model)
     """
-    def __init__(self, model: SentenceTransformer, scale: float = 20.0, similarity_fct = util.cos_sim):
+
+    def __init__(self, model: SentenceTransformer, scale: float = 20.0, similarity_fct=util.cos_sim):
         """
         :param model: SentenceTransformer model
         :param scale: Output of similarity function is multiplied by scale value
@@ -48,20 +50,17 @@ class MultipleNegativesRankingLoss(nn.Module):
         self.similarity_fct = similarity_fct
         self.cross_entropy_loss = nn.CrossEntropyLoss()
 
-
     def forward(self, sentence_features: Iterable[Dict[str, Tensor]], labels: Tensor):
-        reps = [self.model(sentence_feature)['sentence_embedding'] for sentence_feature in sentence_features]
+        reps = [self.model(sentence_feature)['sentence_embedding']
+                for sentence_feature in sentence_features]
         embeddings_a = reps[0]
         embeddings_b = torch.cat(reps[1:])
 
         scores = self.similarity_fct(embeddings_a, embeddings_b) * self.scale
-        labels = torch.tensor(range(len(scores)), dtype=torch.long, device=scores.device)  # Example a[i] should match with b[i]
+        # Example a[i] should match with b[i]
+        labels = torch.tensor(range(len(scores)),
+                              dtype=torch.long, device=scores.device)
         return self.cross_entropy_loss(scores, labels)
 
     def get_config_dict(self):
         return {'scale': self.scale, 'similarity_fct': self.similarity_fct.__name__}
-
-
-
-
-

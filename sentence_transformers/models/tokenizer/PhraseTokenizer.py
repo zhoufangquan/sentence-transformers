@@ -10,12 +10,14 @@ import nltk
 
 logger = logging.getLogger(__name__)
 
+
 class PhraseTokenizer(WordTokenizer):
     """Tokenizes the text with respect to existent phrases in the vocab.
 
     This tokenizers respects phrases that are in the vocab. Phrases are separated with 'ngram_separator', for example,
     in Google News word2vec file, ngrams are separated with a _ like New_York. These phrases are detected in text and merged as one special token. (New York is the ... => [New_York, is, the])
     """
+
     def __init__(self, vocab: Iterable[str] = [], stop_words: Iterable[str] = ENGLISH_STOP_WORDS, do_lower_case: bool = False, ngram_separator: str = "_", max_ngram_length: int = 5):
         self.stop_words = set(stop_words)
         self.do_lower_case = do_lower_case
@@ -28,7 +30,8 @@ class PhraseTokenizer(WordTokenizer):
 
     def set_vocab(self, vocab: Iterable[str]):
         self.vocab = vocab
-        self.word2idx = collections.OrderedDict([(word, idx) for idx, word in enumerate(vocab)])
+        self.word2idx = collections.OrderedDict(
+            [(word, idx) for idx, word in enumerate(vocab)])
 
         # Check for ngram in vocab
         self.ngram_lookup = set()
@@ -43,13 +46,15 @@ class PhraseTokenizer(WordTokenizer):
                     self.ngram_lengths.add(ngram_count)
 
         if len(vocab) > 0:
-            logger.info("PhraseTokenizer - Phrase ngram lengths: {}".format(self.ngram_lengths))
-            logger.info("PhraseTokenizer - Num phrases: {}".format(len(self.ngram_lookup)))
+            logger.info(
+                "PhraseTokenizer - Phrase ngram lengths: {}".format(self.ngram_lengths))
+            logger.info(
+                "PhraseTokenizer - Num phrases: {}".format(len(self.ngram_lookup)))
 
     def tokenize(self, text: str) -> List[int]:
         tokens = nltk.word_tokenize(text, preserve_line=True)
 
-        #phrase detection
+        # phrase detection
         for ngram_len in sorted(self.ngram_lengths, reverse=True):
             idx = 0
             while idx <= len(tokens) - ngram_len:
@@ -60,7 +65,7 @@ class PhraseTokenizer(WordTokenizer):
                     tokens[idx:idx + ngram_len] = [ngram.lower()]
                 idx += 1
 
-        #Map tokens to idx, filter stop words
+        # Map tokens to idx, filter stop words
         tokens_filtered = []
         for token in tokens:
             if token in self.stop_words:
@@ -87,7 +92,8 @@ class PhraseTokenizer(WordTokenizer):
 
     def save(self, output_path: str):
         with open(os.path.join(output_path, 'phrasetokenizer_config.json'), 'w') as fOut:
-            json.dump({'vocab': list(self.word2idx.keys()), 'stop_words': list(self.stop_words), 'do_lower_case': self.do_lower_case, 'ngram_separator': self.ngram_separator, 'max_ngram_length': self.max_ngram_length}, fOut)
+            json.dump({'vocab': list(self.word2idx.keys()), 'stop_words': list(self.stop_words), 'do_lower_case': self.do_lower_case,
+                      'ngram_separator': self.ngram_separator, 'max_ngram_length': self.max_ngram_length}, fOut)
 
     @staticmethod
     def load(input_path: str):

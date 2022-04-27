@@ -39,15 +39,18 @@ class OnlineContrastiveLoss(nn.Module):
         self.distance_metric = distance_metric
 
     def forward(self, sentence_features: Iterable[Dict[str, Tensor]], labels: Tensor, size_average=False):
-        embeddings = [self.model(sentence_feature)['sentence_embedding'] for sentence_feature in sentence_features]
+        embeddings = [self.model(sentence_feature)['sentence_embedding']
+                      for sentence_feature in sentence_features]
 
         distance_matrix = self.distance_metric(embeddings[0], embeddings[1])
         negs = distance_matrix[labels == 0]
         poss = distance_matrix[labels == 1]
 
         # select hard positive and hard negative pairs
-        negative_pairs = negs[negs < (poss.max() if len(poss) > 1 else negs.mean())]
-        positive_pairs = poss[poss > (negs.min() if len(negs) > 1 else poss.mean())]
+        negative_pairs = negs[negs < (
+            poss.max() if len(poss) > 1 else negs.mean())]
+        positive_pairs = poss[poss > (
+            negs.min() if len(negs) > 1 else poss.mean())]
 
         positive_loss = positive_pairs.pow(2).sum()
         negative_loss = F.relu(self.margin - negative_pairs).pow(2).sum()

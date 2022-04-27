@@ -8,6 +8,7 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
+
 class CEBinaryAccuracyEvaluator:
     """
     This evaluator can be used with the CrossEncoder class.
@@ -17,13 +18,15 @@ class CEBinaryAccuracyEvaluator:
 
     See CEBinaryClassificationEvaluator for an evaluator that determines automatically the optimal threshold.
     """
-    def __init__(self, sentence_pairs: List[List[str]], labels: List[int], name: str='', threshold: float = 0.5, write_csv: bool = True):
+
+    def __init__(self, sentence_pairs: List[List[str]], labels: List[int], name: str = '', threshold: float = 0.5, write_csv: bool = True):
         self.sentence_pairs = sentence_pairs
         self.labels = labels
         self.name = name
         self.threshold = threshold
 
-        self.csv_file = "CEBinaryAccuracyEvaluator" + ("_" + name if name else '') + "_results.csv"
+        self.csv_file = "CEBinaryAccuracyEvaluator" + \
+            ("_" + name if name else '') + "_results.csv"
         self.csv_headers = ["epoch", "steps", "Accuracy"]
         self.write_csv = write_csv
 
@@ -46,8 +49,10 @@ class CEBinaryAccuracyEvaluator:
         else:
             out_txt = ":"
 
-        logger.info("CEBinaryAccuracyEvaluator: Evaluating the model on " + self.name + " dataset" + out_txt)
-        pred_scores = model.predict(self.sentence_pairs, convert_to_numpy=True, show_progress_bar=False)
+        logger.info("CEBinaryAccuracyEvaluator: Evaluating the model on " +
+                    self.name + " dataset" + out_txt)
+        pred_scores = model.predict(
+            self.sentence_pairs, convert_to_numpy=True, show_progress_bar=False)
         pred_labels = pred_scores > self.threshold
 
         assert len(pred_labels) == len(self.labels)

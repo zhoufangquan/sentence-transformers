@@ -7,6 +7,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class SoftmaxLoss(nn.Module):
     """
     This loss was used in our SBERT publication (https://arxiv.org/abs/1908.10084) to train the SentenceTransformer
@@ -32,6 +33,7 @@ class SoftmaxLoss(nn.Module):
         train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=train_batch_size)
         train_loss = losses.SoftmaxLoss(model=model, sentence_embedding_dimension=model.get_sentence_embedding_dimension(), num_labels=train_num_labels)
     """
+
     def __init__(self,
                  model: SentenceTransformer,
                  sentence_embedding_dimension: int,
@@ -54,12 +56,15 @@ class SoftmaxLoss(nn.Module):
             num_vectors_concatenated += 1
         if concatenation_sent_multiplication:
             num_vectors_concatenated += 1
-        logger.info("Softmax loss: #Vectors concatenated: {}".format(num_vectors_concatenated))
-        self.classifier = nn.Linear(num_vectors_concatenated * sentence_embedding_dimension, num_labels)
+        logger.info("Softmax loss: #Vectors concatenated: {}".format(
+            num_vectors_concatenated))
+        self.classifier = nn.Linear(
+            num_vectors_concatenated * sentence_embedding_dimension, num_labels)
         self.loss_fct = loss_fct
 
     def forward(self, sentence_features: Iterable[Dict[str, Tensor]], labels: Tensor):
-        reps = [self.model(sentence_feature)['sentence_embedding'] for sentence_feature in sentence_features]
+        reps = [self.model(sentence_feature)['sentence_embedding']
+                for sentence_feature in sentence_features]
         rep_a, rep_b = reps
 
         vectors_concat = []

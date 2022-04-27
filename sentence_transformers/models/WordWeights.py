@@ -9,6 +9,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class WordWeights(nn.Module):
     """This model can weight word embeddings, for example, with idf-values."""
 
@@ -40,26 +41,29 @@ class WordWeights(nn.Module):
                 num_unknown_words += 1
             weights.append(weight)
 
-        logger.info("{} of {} words without a weighting value. Set weight to {}".format(num_unknown_words, len(vocab), unknown_word_weight))
+        logger.info("{} of {} words without a weighting value. Set weight to {}".format(
+            num_unknown_words, len(vocab), unknown_word_weight))
 
         self.emb_layer = nn.Embedding(len(vocab), 1)
-        self.emb_layer.load_state_dict({'weight': torch.FloatTensor(weights).unsqueeze(1)})
-
+        self.emb_layer.load_state_dict(
+            {'weight': torch.FloatTensor(weights).unsqueeze(1)})
 
     def forward(self, features: Dict[str, Tensor]):
         attention_mask = features['attention_mask']
         token_embeddings = features['token_embeddings']
 
-        #Compute a weight value for each token
+        # Compute a weight value for each token
         token_weights_raw = self.emb_layer(features['input_ids']).squeeze(-1)
         token_weights = token_weights_raw * attention_mask.float()
         token_weights_sum = torch.sum(token_weights, 1)
 
-        #Multiply embedding by token weight value
-        token_weights_expanded = token_weights.unsqueeze(-1).expand(token_embeddings.size())
+        # Multiply embedding by token weight value
+        token_weights_expanded = token_weights.unsqueeze(
+            -1).expand(token_embeddings.size())
         token_embeddings = token_embeddings * token_weights_expanded
 
-        features.update({'token_embeddings': token_embeddings, 'token_weights_sum': token_weights_sum})
+        features.update({'token_embeddings': token_embeddings,
+                        'token_weights_sum': token_weights_sum})
         return features
 
     def get_config_dict(self):

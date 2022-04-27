@@ -4,6 +4,7 @@ from typing import Iterable, Dict
 from ..SentenceTransformer import SentenceTransformer
 from .. import util
 
+
 class MultipleNegativesSymmetricRankingLoss(nn.Module):
     """
         This loss is an adaptation of MultipleNegativesRankingLoss. MultipleNegativesRankingLoss computes the following loss:
@@ -29,7 +30,8 @@ class MultipleNegativesSymmetricRankingLoss(nn.Module):
             train_dataloader = DataLoader(train_examples, shuffle=True, batch_size=32)
             train_loss = losses.MultipleNegativesSymmetricRankingLoss(model=model)
     """
-    def __init__(self, model: SentenceTransformer, scale: float = 20.0, similarity_fct = util.cos_sim):
+
+    def __init__(self, model: SentenceTransformer, scale: float = 20.0, similarity_fct=util.cos_sim):
         """
         :param model: SentenceTransformer model
         :param scale: Output of similarity function is multiplied by scale value
@@ -41,24 +43,22 @@ class MultipleNegativesSymmetricRankingLoss(nn.Module):
         self.similarity_fct = similarity_fct
         self.cross_entropy_loss = nn.CrossEntropyLoss()
 
-
     def forward(self, sentence_features: Iterable[Dict[str, Tensor]], labels: Tensor):
-        reps = [self.model(sentence_feature)['sentence_embedding'] for sentence_feature in sentence_features]
+        reps = [self.model(sentence_feature)['sentence_embedding']
+                for sentence_feature in sentence_features]
         anchor = reps[0]
         candidates = torch.cat(reps[1:])
 
         scores = self.similarity_fct(anchor, candidates) * self.scale
-        labels = torch.tensor(range(len(scores)), dtype=torch.long, device=scores.device)  # Example a[i] should match with b[i]
+        # Example a[i] should match with b[i]
+        labels = torch.tensor(range(len(scores)),
+                              dtype=torch.long, device=scores.device)
 
         anchor_positive_scores = scores[:, 0:len(reps[1])]
         forward_loss = self.cross_entropy_loss(scores, labels)
-        backward_loss = self.cross_entropy_loss(anchor_positive_scores.transpose(0, 1), labels)
+        backward_loss = self.cross_entropy_loss(
+            anchor_positive_scores.transpose(0, 1), labels)
         return (forward_loss + backward_loss) / 2
 
     def get_config_dict(self):
         return {'scale': self.scale, 'similarity_fct': self.similarity_fct.__name__}
-
-
-
-
-

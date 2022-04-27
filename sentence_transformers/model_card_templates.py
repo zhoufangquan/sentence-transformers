@@ -2,8 +2,10 @@ import logging
 
 from .util import fullname
 
+
 class ModelCardTemplate:
-    __TAGS__ = ["sentence-transformers", "feature-extraction", "sentence-similarity"]
+    __TAGS__ = ["sentence-transformers",
+                "feature-extraction", "sentence-similarity"]
     __DEFAULT_VARS__ = {
         "{PIPELINE_TAG}": "sentence-similarity",
         "{MODEL_DESCRIPTION}": "<!--- Describe your model here -->",
@@ -66,8 +68,6 @@ For an automated evaluation of this model, see the *Sentence Embeddings Benchmar
 
 """
 
-
-
     __TRAINING_SECTION__ = """
 ## Training
 The model was trained with the parameters:
@@ -79,7 +79,6 @@ Parameters of the fit()-Method:
 {FIT_PARAMETERS}
 ```
 """
-
 
     __USAGE_TRANSFORMERS__ = """\n
 ## Usage (HuggingFace Transformers)
@@ -114,8 +113,6 @@ print(sentence_embeddings)
 
 """
 
-
-
     @staticmethod
     def model_card_get_pooling_function(pooling_mode):
         if pooling_mode == 'max':
@@ -149,11 +146,13 @@ def cls_pooling(model_output, attention_mask):
                 train_loader = dataloader.get_config_dict()
             else:
                 loader_params = {}
-                loader_params['batch_size'] = dataloader.batch_size if hasattr(dataloader, 'batch_size') else 'unknown'
+                loader_params['batch_size'] = dataloader.batch_size if hasattr(
+                    dataloader, 'batch_size') else 'unknown'
                 if hasattr(dataloader, 'sampler'):
                     loader_params['sampler'] = fullname(dataloader.sampler)
                 if hasattr(dataloader, 'batch_sampler'):
-                    loader_params['batch_sampler'] = fullname(dataloader.batch_sampler)
+                    loader_params['batch_sampler'] = fullname(
+                        dataloader.batch_sampler)
 
             dataloader_str = """**DataLoader**:\n\n`{}` of length {} with parameters:
 ```
@@ -161,7 +160,7 @@ def cls_pooling(model_output, attention_mask):
 ```""".format(fullname(dataloader), len(dataloader), loader_params)
 
             loss_str = "**Loss**:\n\n`{}` {}".format(fullname(loss),
- """with parameters:
+                                                     """with parameters:
   ```
   {}
   ```""".format(loss.get_config_dict()) if hasattr(loss, 'get_config_dict') else "")
@@ -169,5 +168,6 @@ def cls_pooling(model_output, attention_mask):
             return [dataloader_str, loss_str]
 
         except Exception as e:
-            logging.WARN("Exception when creating get_train_objective_info: {}".format(str(e)))
+            logging.WARN(
+                "Exception when creating get_train_objective_info: {}".format(str(e)))
             return ""

@@ -24,7 +24,7 @@ model = SentenceTransformer('all-MiniLM-L6-v2')
 # and find similar question in it
 url = "http://qim.fs.quoracdn.net/quora_duplicate_questions.tsv"
 dataset_path = "quora_duplicate_questions.tsv"
-max_corpus_size = 50000 # We limit our corpus to only the first 50k questions
+max_corpus_size = 50000  # We limit our corpus to only the first 50k questions
 
 
 # Check if the dataset exists. If not, download and extract
@@ -45,20 +45,22 @@ with open(dataset_path, encoding='utf8') as fIn:
 
 corpus_sentences = list(corpus_sentences)
 print("Encode the corpus. This might take a while")
-corpus_embeddings = model.encode(corpus_sentences, batch_size=64, show_progress_bar=True, convert_to_tensor=True)
+corpus_embeddings = model.encode(
+    corpus_sentences, batch_size=64, show_progress_bar=True, convert_to_tensor=True)
 
 
 print("Start clustering")
 start_time = time.time()
 
-#Two parameters to tune:
-#min_cluster_size: Only consider cluster that have at least 25 elements
-#threshold: Consider sentence pairs with a cosine-similarity larger than threshold as similar
-clusters = util.community_detection(corpus_embeddings, min_community_size=25, threshold=0.75)
+# Two parameters to tune:
+# min_cluster_size: Only consider cluster that have at least 25 elements
+# threshold: Consider sentence pairs with a cosine-similarity larger than threshold as similar
+clusters = util.community_detection(
+    corpus_embeddings, min_community_size=25, threshold=0.75)
 
 print("Clustering done after {:.2f} sec".format(time.time() - start_time))
 
-#Print for all clusters the top 3 and bottom 3 elements
+# Print for all clusters the top 3 and bottom 3 elements
 for i, cluster in enumerate(clusters):
     print("\nCluster {}, #{} Elements ".format(i+1, len(cluster)))
     for sentence_id in cluster[0:3]:
@@ -66,6 +68,3 @@ for i, cluster in enumerate(clusters):
     print("\t", "...")
     for sentence_id in cluster[-3:]:
         print("\t", corpus_sentences[sentence_id])
-
-
-

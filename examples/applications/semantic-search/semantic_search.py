@@ -25,7 +25,8 @@ corpus = ['A man is eating food.',
 corpus_embeddings = embedder.encode(corpus, convert_to_tensor=True)
 
 # Query sentences:
-queries = ['A man is eating pasta.', 'Someone in a gorilla costume is playing a set of drums.', 'A cheetah chases prey on across a field.']
+queries = ['A man is eating pasta.', 'Someone in a gorilla costume is playing a set of drums.',
+           'A cheetah chases prey on across a field.']
 
 
 # Find the closest 5 sentences of the corpus for each query sentence based on cosine similarity

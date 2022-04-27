@@ -26,7 +26,6 @@ import time
 import tqdm.autonotebook
 
 
-
 es = Elasticsearch()
 
 model = SentenceTransformer('quora-distilbert-multilingual')
@@ -35,12 +34,12 @@ url = "http://qim.fs.quoracdn.net/quora_duplicate_questions.tsv"
 dataset_path = "quora_duplicate_questions.tsv"
 max_corpus_size = 100000
 
-#Download dataset if needed
+# Download dataset if needed
 if not os.path.exists(dataset_path):
     print("Download dataset")
     util.http_get(url, dataset_path)
 
-#Get all unique sentences from the file
+# Get all unique sentences from the file
 all_questions = {}
 with open(dataset_path, encoding='utf8') as fIn:
     reader = csv.DictReader(fIn, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
@@ -56,20 +55,20 @@ with open(dataset_path, encoding='utf8') as fIn:
 qids = list(all_questions.keys())
 questions = [all_questions[qid] for qid in qids]
 
-#Index data, if the index does not exists
+# Index data, if the index does not exists
 if not es.indices.exists(index="quora"):
     try:
         es_index = {
             "mappings": {
-              "properties": {
-                "question": {
-                  "type": "text"
-                },
-                "question_vector": {
-                  "type": "dense_vector",
-                  "dims": 768
+                "properties": {
+                    "question": {
+                        "type": "text"
+                    },
+                    "question_vector": {
+                        "type": "dense_vector",
+                        "dims": 768
+                    }
                 }
-              }
             }
         }
 
@@ -80,17 +79,18 @@ if not es.indices.exists(index="quora"):
             for start_idx in range(0, len(qids), chunk_size):
                 end_idx = start_idx+chunk_size
 
-                embeddings = model.encode(questions[start_idx:end_idx], show_progress_bar=False)
+                embeddings = model.encode(
+                    questions[start_idx:end_idx], show_progress_bar=False)
                 bulk_data = []
                 for qid, question, embedding in zip(qids[start_idx:end_idx], questions[start_idx:end_idx], embeddings):
                     bulk_data.append({
-                            "_index": 'quora',
-                            "_id": qid,
-                            "_source": {
-                                "question": question,
-                                "question_vector": embedding
-                            }
-                        })
+                        "_index": 'quora',
+                        "_id": qid,
+                        "_source": {
+                            "question": question,
+                            "question_vector": embedding
+                        }
+                    })
 
                 helpers.bulk(es, bulk_data)
                 pbar.update(chunk_size)
@@ -99,9 +99,7 @@ if not es.indices.exists(index="quora"):
         print("During index an exception occured. Continue\n\n")
 
 
-
-
-#Interactive search queries
+# Interactive search queries
 while True:
     inp_question = input("Please enter a question: ")
 
@@ -109,28 +107,30 @@ while True:
     question_embedding = model.encode(inp_question)
     encode_end_time = time.time()
 
-    #Lexical search
-    bm25 = es.search(index="quora", body={"query": {"match": {"question": inp_question }}})
+    # Lexical search
+    bm25 = es.search(index="quora", body={
+                     "query": {"match": {"question": inp_question}}})
 
-    #Sematic search
+    # Sematic search
     sem_search = es.search(index="quora", body={
-          "query": {
+        "query": {
             "script_score": {
-              "query": {
-                "match_all": {}
-              },
-              "script": {
-                "source": "cosineSimilarity(params.queryVector, doc['question_vector']) + 1.0",
-                "params": {
-                  "queryVector": question_embedding
+                "query": {
+                    "match_all": {}
+                },
+                "script": {
+                    "source": "cosineSimilarity(params.queryVector, doc['question_vector']) + 1.0",
+                    "params": {
+                        "queryVector": question_embedding
+                    }
                 }
-              }
             }
-          }
-        })
+        }
+    })
 
     print("Input question:", inp_question)
-    print("Computing the embedding took {:.3f} seconds, BM25 search took {:.3f} seconds, semantic search with ES took {:.3f} seconds".format(encode_end_time-encode_start_time, bm25['took']/1000, sem_search['took']/1000))
+    print("Computing the embedding took {:.3f} seconds, BM25 search took {:.3f} seconds, semantic search with ES took {:.3f} seconds".format(
+        encode_end_time-encode_start_time, bm25['took']/1000, sem_search['took']/1000))
 
     print("BM25 results:")
     for hit in bm25['hits']['hits'][0:5]:

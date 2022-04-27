@@ -25,7 +25,8 @@ corpus = ['A man is eating food.',
           ]
 
 # So we create the respective sentence combinations
-sentence_combinations = [[query, corpus_sentence] for corpus_sentence in corpus]
+sentence_combinations = [[query, corpus_sentence]
+                         for corpus_sentence in corpus]
 
 # Compute the similarity scores for these combinations
 similarity_scores = model.predict(sentence_combinations)

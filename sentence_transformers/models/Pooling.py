@@ -19,6 +19,7 @@ class Pooling(nn.Module):
     :param pooling_mode_mean_tokens: Perform mean-pooling
     :param pooling_mode_mean_sqrt_len_tokens: Perform mean-pooling, but devide by sqrt(input_length).
     """
+
     def __init__(self,
                  word_embedding_dimension: int,
                  pooling_mode: str = None,
@@ -29,9 +30,10 @@ class Pooling(nn.Module):
                  ):
         super(Pooling, self).__init__()
 
-        self.config_keys = ['word_embedding_dimension',  'pooling_mode_cls_token', 'pooling_mode_mean_tokens', 'pooling_mode_max_tokens', 'pooling_mode_mean_sqrt_len_tokens']
+        self.config_keys = ['word_embedding_dimension',  'pooling_mode_cls_token',
+                            'pooling_mode_mean_tokens', 'pooling_mode_max_tokens', 'pooling_mode_mean_sqrt_len_tokens']
 
-        if pooling_mode is not None:        #Set pooling mode by string
+        if pooling_mode is not None:  # Set pooling mode by string
             pooling_mode = pooling_mode.lower()
             assert pooling_mode in ['mean', 'max', 'cls']
             pooling_mode_cls_token = (pooling_mode == 'cls')
@@ -44,9 +46,10 @@ class Pooling(nn.Module):
         self.pooling_mode_max_tokens = pooling_mode_max_tokens
         self.pooling_mode_mean_sqrt_len_tokens = pooling_mode_mean_sqrt_len_tokens
 
-        pooling_mode_multiplier = sum([pooling_mode_cls_token, pooling_mode_max_tokens, pooling_mode_mean_tokens, pooling_mode_mean_sqrt_len_tokens])
-        self.pooling_output_dimension = (pooling_mode_multiplier * word_embedding_dimension)
-
+        pooling_mode_multiplier = sum([pooling_mode_cls_token, pooling_mode_max_tokens,
+                                      pooling_mode_mean_tokens, pooling_mode_mean_sqrt_len_tokens])
+        self.pooling_output_dimension = (
+            pooling_mode_multiplier * word_embedding_dimension)
 
     def __repr__(self):
         return "Pooling({})".format(self.get_config_dict())
@@ -71,23 +74,30 @@ class Pooling(nn.Module):
         token_embeddings = features['token_embeddings']
         attention_mask = features['attention_mask']
 
-        ## Pooling strategy
+        # Pooling strategy
         output_vectors = []
         if self.pooling_mode_cls_token:
-            cls_token = features.get('cls_token_embeddings', token_embeddings[:, 0])  # Take first token by default
+            # Take first token by default
+            cls_token = features.get(
+                'cls_token_embeddings', token_embeddings[:, 0])
             output_vectors.append(cls_token)
         if self.pooling_mode_max_tokens:
-            input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
-            token_embeddings[input_mask_expanded == 0] = -1e9  # Set padding tokens to large negative value
+            input_mask_expanded = attention_mask.unsqueeze(
+                -1).expand(token_embeddings.size()).float()
+            # Set padding tokens to large negative value
+            token_embeddings[input_mask_expanded == 0] = -1e9
             max_over_time = torch.max(token_embeddings, 1)[0]
             output_vectors.append(max_over_time)
         if self.pooling_mode_mean_tokens or self.pooling_mode_mean_sqrt_len_tokens:
-            input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
-            sum_embeddings = torch.sum(token_embeddings * input_mask_expanded, 1)
+            input_mask_expanded = attention_mask.unsqueeze(
+                -1).expand(token_embeddings.size()).float()
+            sum_embeddings = torch.sum(
+                token_embeddings * input_mask_expanded, 1)
 
-            #If tokens are weighted (by WordWeights layer), feature 'token_weights_sum' will be present
+            # If tokens are weighted (by WordWeights layer), feature 'token_weights_sum' will be present
             if 'token_weights_sum' in features:
-                sum_mask = features['token_weights_sum'].unsqueeze(-1).expand(sum_embeddings.size())
+                sum_mask = features['token_weights_sum'].unsqueeze(
+                    -1).expand(sum_embeddings.size())
             else:
                 sum_mask = input_mask_expanded.sum(1)
 

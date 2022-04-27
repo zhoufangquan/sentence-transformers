@@ -1,6 +1,7 @@
 import random
 import math
 
+
 class NoDuplicatesDataLoader:
 
     def __init__(self, train_examples, batch_size):

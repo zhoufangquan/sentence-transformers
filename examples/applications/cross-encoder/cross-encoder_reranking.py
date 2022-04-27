@@ -30,9 +30,10 @@ dataset_path = "quora_duplicate_questions.tsv"
 max_corpus_size = 20000
 
 # Some local file to cache computed embeddings
-embedding_cache_path = 'quora-embeddings-{}-size-{}.pkl'.format(model_name.replace('/', '_'), max_corpus_size)
+embedding_cache_path = 'quora-embeddings-{}-size-{}.pkl'.format(
+    model_name.replace('/', '_'), max_corpus_size)
 
-#Check if embedding cache path exists
+# Check if embedding cache path exists
 if not os.path.exists(embedding_cache_path):
     # Check if the dataset exists. If not, download and extract
     # Download dataset if needed
@@ -55,11 +56,13 @@ if not os.path.exists(embedding_cache_path):
 
     corpus_sentences = list(corpus_sentences)
     print("Encode the corpus. This might take a while")
-    corpus_embeddings = model.encode(corpus_sentences, show_progress_bar=True, convert_to_tensor=True, num_workers=2)
+    corpus_embeddings = model.encode(
+        corpus_sentences, show_progress_bar=True, convert_to_tensor=True, num_workers=2)
 
     print("Store file on disc")
     with open(embedding_cache_path, "wb") as fOut:
-        pickle.dump({'sentences': corpus_sentences, 'embeddings': corpus_embeddings}, fOut)
+        pickle.dump({'sentences': corpus_sentences,
+                    'embeddings': corpus_embeddings}, fOut)
 else:
     print("Load pre-computed embeddings from disc")
     with open(embedding_cache_path, "rb") as fIn:
@@ -74,31 +77,36 @@ while True:
     inp_question = input("Please enter a question: ")
     print("Input question:", inp_question)
 
-    #First, retrieve candidates using cosine similarity search
+    # First, retrieve candidates using cosine similarity search
     start_time = time.time()
     question_embedding = model.encode(inp_question, convert_to_tensor=True)
-    hits = util.semantic_search(question_embedding, corpus_embeddings, top_k=num_candidates)
-    hits = hits[0]  #Get the hits for the first query
+    hits = util.semantic_search(
+        question_embedding, corpus_embeddings, top_k=num_candidates)
+    hits = hits[0]  # Get the hits for the first query
 
-    print("Cosine-Similarity search took {:.3f} seconds".format(time.time()-start_time))
+    print(
+        "Cosine-Similarity search took {:.3f} seconds".format(time.time()-start_time))
     print("Top 5 hits with cosine-similarity:")
     for hit in hits[0:5]:
-        print("\t{:.3f}\t{}".format(hit['score'], corpus_sentences[hit['corpus_id']]))
+        print("\t{:.3f}\t{}".format(
+            hit['score'], corpus_sentences[hit['corpus_id']]))
 
-
-    #Now, do the re-ranking with the cross-encoder
+    # Now, do the re-ranking with the cross-encoder
     start_time = time.time()
-    sentence_pairs = [[inp_question, corpus_sentences[hit['corpus_id']]] for hit in hits]
+    sentence_pairs = [
+        [inp_question, corpus_sentences[hit['corpus_id']]] for hit in hits]
     ce_scores = cross_encoder_model.predict(sentence_pairs)
 
     for idx in range(len(hits)):
         hits[idx]['cross-encoder_score'] = ce_scores[idx]
 
-    #Sort list by CrossEncoder scores
+    # Sort list by CrossEncoder scores
     hits = sorted(hits, key=lambda x: x['cross-encoder_score'], reverse=True)
-    print("\nRe-ranking with Cross-Encoder took {:.3f} seconds".format(time.time() - start_time))
+    print(
+        "\nRe-ranking with Cross-Encoder took {:.3f} seconds".format(time.time() - start_time))
     print("Top 5 hits with CrossEncoder:")
     for hit in hits[0:5]:
-        print("\t{:.3f}\t{}".format(hit['cross-encoder_score'], corpus_sentences[hit['corpus_id']]))
+        print("\t{:.3f}\t{}".format(
+            hit['cross-encoder_score'], corpus_sentences[hit['corpus_id']]))
 
     print("\n\n========\n")

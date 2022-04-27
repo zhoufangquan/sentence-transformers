@@ -11,6 +11,7 @@ class MSELoss(nn.Module):
 
     For an example, see the documentation on extending language models to new languages.
     """
+
     def __init__(self, model):
         """
         :param model: SentenceTransformerModel

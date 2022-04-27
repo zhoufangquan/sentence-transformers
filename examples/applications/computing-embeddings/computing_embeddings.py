@@ -7,15 +7,14 @@ from sentence_transformers import SentenceTransformer, LoggingHandler
 import numpy as np
 import logging
 
-#### Just some code to print debug information to stdout
+# Just some code to print debug information to stdout
 np.set_printoptions(threshold=100)
 
 logging.basicConfig(format='%(asctime)s - %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S',
                     level=logging.INFO,
                     handlers=[LoggingHandler()])
-#### /print debug information to stdout
-
+# /print debug information to stdout
 
 
 # Load pre-trained Sentence Transformer Model. It will be downloaded automatically
@@ -32,6 +31,3 @@ for sentence, embedding in zip(sentences, sentence_embeddings):
     print("Sentence:", sentence)
     print("Embedding:", embedding)
     print("")
-
-
-

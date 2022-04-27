@@ -6,6 +6,7 @@ Source: https://github.com/crabcamp/lexrank/tree/dev
 import numpy as np
 from scipy.sparse.csgraph import connected_components
 
+
 def degree_centrality_scores(
     similarity_matrix,
     threshold=None,

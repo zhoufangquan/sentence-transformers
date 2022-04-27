@@ -3,11 +3,13 @@ import csv
 import gzip
 import os
 
+
 class TripletReader(object):
     """
     Reads in the a Triplet Dataset: Each line contains (at least) 3 columns, one anchor column (s1),
     one positive example (s2) and one negative example (s3)
     """
+
     def __init__(self, dataset_folder, s1_col_idx=0, s2_col_idx=1, s3_col_idx=2, has_header=False, delimiter="\t",
                  quoting=csv.QUOTE_NONE):
         self.dataset_folder = dataset_folder
