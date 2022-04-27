@@ -7,6 +7,7 @@ import unittest
 from sentence_transformers import SentenceTransformer
 import numpy as np
 
+
 class ComputeMultiProcessTest(unittest.TestCase):
     def setUp(self):
         self.model = SentenceTransformer('paraphrase-distilroberta-base-v1')
@@ -23,11 +24,6 @@ class ComputeMultiProcessTest(unittest.TestCase):
 
         emb_normal = self.model.encode(sentences)
 
-
         diff = np.max(np.abs(emb - emb_normal))
         print("Max multi proc diff", diff)
         assert diff < 0.001
-
-
-
-
