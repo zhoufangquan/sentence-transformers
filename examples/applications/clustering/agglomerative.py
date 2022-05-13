@@ -25,8 +25,7 @@ corpus = ['A man is eating food.',
 corpus_embeddings = embedder.encode(corpus)
 
 # Normalize the embeddings to unit length
-corpus_embeddings = corpus_embeddings / \
-    np.linalg.norm(corpus_embeddings, axis=1, keepdims=True)
+corpus_embeddings = corpus_embeddings / np.linalg.norm(corpus_embeddings, axis=1, keepdims=True)
 
 # Perform kmean clustering
 # , affinity='cosine', linkage='average', distance_threshold=0.4)
@@ -43,6 +42,6 @@ for sentence_id, cluster_id in enumerate(cluster_assignment):
     clustered_sentences[cluster_id].append(corpus[sentence_id])
 
 for i, cluster in clustered_sentences.items():
-    print("Cluster ", i+1)
+    print("Cluster ", i + 1)
     print(cluster)
     print("")
